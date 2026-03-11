@@ -11,6 +11,9 @@ import com.connectsphere.algorithms.UnionFind;
 import com.connectsphere.graph.SocialGraph;
 import com.connectsphere.model.User;
 import com.connectsphere.search.UserSearchTrie;
+import com.connectsphere.service.FeedService;
+import com.connectsphere.service.GraphService;
+import com.connectsphere.service.UserService;
 
 public class CLIApp {
 
@@ -18,39 +21,55 @@ public class CLIApp {
     static UserSearchTrie trie = new UserSearchTrie();
     static Scanner scanner = new Scanner(System.in);
     static int nextId = 1;
+    static UserService userService;
+    static GraphService graphService;
+    static FeedService feedService;
 
     public static void main(String[] args) {
         System.out.println("🌐 Welcome to ConnectSphere!");
         loadSampleData();
+        userService = new UserService(graph, trie, nextId);
+        graphService = new GraphService(graph);
+        feedService = new FeedService(graph);
 
         while (true) {
             System.out.println("\n========== MENU ==========");
-            System.out.println("1. Add User");
-            System.out.println("2. Add Friendship");
-            System.out.println("3. View Friends of a User");
-            System.out.println("4. Find Shortest Path (BFS)");
-            System.out.println("5. Get Friend Suggestions");
-            System.out.println("6. Search Users by Name");
-            System.out.println("7. Top Influencers");
-            System.out.println("8. Detect Communities (Union-Find)");
-            System.out.println("9. Detect Communities (DFS)");
-            System.out.println("0. Exit");
+            System.out.println("1.  Add User");
+            System.out.println("2.  Add Friendship");
+            System.out.println("3.  View Friends of a User");
+            System.out.println("4.  Find Shortest Path (BFS)");
+            System.out.println("5.  Get Friend Suggestions");
+            System.out.println("6.  Search Users by Name");
+            System.out.println("7.  Top Influencers");
+            System.out.println("8.  Detect Communities (Union-Find)");
+            System.out.println("9.  Detect Communities (DFS)");
+            System.out.println("10. List All Users");
+            System.out.println("11. Mutual Friends");
+            System.out.println("12. Network Stats");
+            System.out.println("13. Create Post");
+            System.out.println("14. View My Feed");
+            System.out.println("0.  Exit");
             System.out.print("Choose option: ");
 
             int choice = scanner.nextInt();
             scanner.nextLine();
 
             switch (choice) {
-                case 1 -> addUser();
-                case 2 -> addFriendship();
-                case 3 -> viewFriends();
-                case 4 -> findPath();
-                case 5 -> suggestFriends();
-                case 6 -> searchUsers();
-                case 7 -> showInfluencers();
-                case 8 -> detectCommunitiesUnionFind();
-                case 9 -> detectCommunitiesDFS();
-                case 0 -> { System.out.println("👋 Goodbye!"); return; }
+                case 1  -> addUser();
+                case 2  -> addFriendship();
+                case 3  -> viewFriends();
+                case 4  -> findPath();
+                case 5  -> suggestFriends();
+                case 6  -> searchUsers();
+                case 7  -> showInfluencers();
+                case 8  -> detectCommunitiesUnionFind();
+                case 9  -> detectCommunitiesDFS();
+                case 10 -> userService.listAllUsers();
+                case 11 -> mutualFriends();
+                case 12 -> graphService.showNetworkStats();
+                case 13 -> createPost();
+                case 14 -> viewFeed();
+                case 0  -> { System.out.println("👋 Goodbye!"); return; }
                 default -> System.out.println("❌ Invalid choice!");
             }
         }
@@ -78,11 +97,7 @@ public class CLIApp {
     static void addUser() {
         System.out.print("Enter name: "); String name = scanner.nextLine();
         System.out.print("Enter age: ");  int age = scanner.nextInt(); scanner.nextLine();
-        User user = new User(nextId, name, age);
-        graph.addUser(user);
-        trie.insert(name, nextId);
-        System.out.println("✅ Added: " + user + " (ID: " + nextId + ")");
-        nextId++;
+        userService.addUser(name, age);
     }
 
     static void addFriendship() {
@@ -163,5 +178,25 @@ public class CLIApp {
             group.forEach(id -> System.out.print(graph.getUser(id).getName() + " "));
             System.out.println();
         }
+    }
+
+    static void mutualFriends() {
+        System.out.print("Enter User ID 1: "); int id1 = scanner.nextInt();
+        System.out.print("Enter User ID 2: "); int id2 = scanner.nextInt();
+        scanner.nextLine();
+        graphService.showMutualFriends(id1, id2);
+    }
+
+    static void createPost() {
+        System.out.print("Your User ID: "); int id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Write your post: "); String content = scanner.nextLine();
+        feedService.createPost(id, content);
+    }
+
+    static void viewFeed() {
+        System.out.print("Your User ID: "); int id = scanner.nextInt();
+        scanner.nextLine();
+        feedService.showFeedForUser(id);
     }
 }
