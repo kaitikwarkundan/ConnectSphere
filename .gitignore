@@ -1,0 +1,11 @@
+# Maven build output — never push this
+target/
+
+# VS Code settings
+.vscode/
+
+# Mac junk files
+.DS_Store
+
+# Log files
+*.log
