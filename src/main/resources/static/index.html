@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConnectSphere — Social Network Graph</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #ffffff;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    header h1 {
+      font-size: 24px;
+      color: #00d4ff;
+    }
+
+    header p {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      padding: 16px 40px;
+      background: #12122a;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    .stat-card {
+      background: #1a1a35;
+      border: 1px solid #2a2a5a;
+      border-radius: 10px;
+      padding: 12px 24px;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .stat-card .number {
+      font-size: 28px;
+      font-weight: bold;
+      color: #00d4ff;
+    }
+
+    .stat-card .label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 0;
+      height: calc(100vh - 140px);
+    }
+
+    /* Graph Canvas */
+    .graph-section {
+      position: relative;
+      background: #0d0d1f;
+      overflow: hidden;
+    }
+
+    #graphCanvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-title {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: #12122a;
+      border-left: 1px solid #2a2a4a;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .sidebar h3 {
+      font-size: 14px;
+      color: #00d4ff;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    input, select {
+      width: 100%;
+      background: #1a1a35;
+      border: 1px solid #2a2a5a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 13px;
+      margin-bottom: 8px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #00d4ff;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: #000;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-secondary {
+      background: #1a1a35;
+      color: #00d4ff;
+      border: 1px solid #00d4ff44;
+    }
+
+    .btn-secondary:hover { background: #00d4ff22; }
+
+    .btn-success {
+      background: linear-gradient(135deg, #00ff88, #00cc66);
+      color: #000;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #2a2a4a;
+      margin: 16px 0;
+    }
+
+    .result-box {
+      background: #0d0d1f;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #aaa;
+      min-height: 60px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .result-box .highlight {
+      color: #00d4ff;
+      font-weight: bold;
+    }
+
+    .result-box .path-item {
+      display: inline-block;
+      background: #1a1a35;
+      border: 1px solid #2a2a5a;
+      border-radius: 20px;
+      padding: 3px 10px;
+      margin: 2px;
+      font-size: 11px;
+      color: #00d4ff;
+    }
+
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .user-item {
+      background: #1a1a35;
+      border: 1px solid #2a2a5a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .user-item:hover {
+      border-color: #00d4ff;
+      background: #00d4ff11;
+    }
+
+    .user-item .name { color: #fff; font-weight: 600; }
+    .user-item .info { color: #555; font-size: 11px; }
+
+    .tag {
+      display: inline-block;
+      background: #00d4ff22;
+      color: #00d4ff;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 10px;
+    }
+
+    .community-group {
+      background: #1a1a35;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .community-group .c-title {
+      color: #00d4ff;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .community-member {
+      display: inline-block;
+      background: #0d0d2a;
+      border-radius: 20px;
+      padding: 2px 8px;
+      margin: 2px;
+      color: #aaa;
+      font-size: 11px;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0d0d1f; }
+    ::-webkit-scrollbar-thumb { background: #2a2a5a; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🌐 ConnectSphere</h1>
+    <p>Social Network Graph Engine — Java + Spring Boot + DSA</p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <span style="font-size:12px; color:#555;">Live API:</span>
+    <span style="font-size:12px; color:#00d4ff;">localhost:8080</span>
+  </div>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat-card">
+    <div class="number" id="statUsers">-</div>
+    <div class="label">Users</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statFriendships">-</div>
+    <div class="label">Friendships</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="statAvg">-</div>
+    <div class="label">Avg Friends</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Graph Canvas -->
+  <div class="graph-section">
+    <div class="graph-title">Social Network Graph — Click a user to explore</div>
+    <canvas id="graphCanvas"></canvas>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Users List -->
+    <h3>👥 Users</h3>
+    <div class="user-list" id="userList">Loading...</div>
+
+    <hr class="divider">
+
+    <!-- Add User -->
+    <h3>➕ Add User</h3>
+    <div class="input-group">
+      <input type="text" id="newName" placeholder="Name">
+      <input type="number" id="newAge" placeholder="Age">
+      <button class="btn-success" onclick="addUser()">Add User</button>
+    </div>
+
+    <hr class="divider">
+
+    <!-- BFS Path Finder -->
+    <h3>🔍 Find Path (BFS)</h3>
+    <div class="input-group">
+      <input type="number" id="fromId" placeholder="From User ID">
+      <input type="number" id="toId" placeholder="To User ID">
+      <button class="btn-primary" onclick="findPath()">Find Shortest Path</button>
+    </div>
+    <div class="result-box" id="pathResult">Enter two user IDs to find connection path...</div>
+
+    <hr class="divider">
+
+    <!-- Friend Suggestions -->
+    <h3>💡 Friend Suggestions</h3>
+    <div class="input-group">
+      <input type="number" id="suggestId" placeholder="User ID">
+      <button class="btn-secondary" onclick="getSuggestions()">Get Suggestions</button>
+    </div>
+    <div class="result-box" id="suggestResult">Enter a user ID to see suggestions...</div>
+
+    <hr class="divider">
+
+    <!-- Search -->
+    <h3>🔎 Search Users</h3>
+    <div class="input-group">
+      <input type="text" id="searchName" placeholder="Type name prefix...">
+      <button class="btn-secondary" onclick="searchUsers()">Search</button>
+    </div>
+    <div class="result-box" id="searchResult">Type a name to search...</div>
+
+    <hr class="divider">
+
+    <!-- Communities -->
+    <h3>🏘️ Communities</h3>
+    <button class="btn-secondary" onclick="getCommunities()">Detect Communities</button>
+    <div id="communityResult"></div>
+
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+  let users = [];
+  let friendships = [];
+
+  // ─── Load everything on start ───
+  async function init() {
+    await loadStats();
+    await loadUsers();
+    await loadFriendships();
+    drawGraph();
+  }
+
+  async function loadStats() {
+    const res = await fetch(`${API}/stats`);
+    const data = await res.json();
+    document.getElementById('statUsers').textContent = data.totalUsers;
+    document.getElementById('statFriendships').textContent = data.totalFriendships;
+    document.getElementById('statAvg').textContent = data.avgFriendsPerUser;
+  }
+
+  async function loadUsers() {
+    const res = await fetch(`${API}/users`);
+    users = await res.json();
+    renderUserList();
+  }
+
+  async function loadFriendships() {
+    friendships = [];
+    for (let user of users) {
+      const res = await fetch(`${API}/friends/${user.id}`);
+      const friends = await res.json();
+      for (let f of friends) {
+        if (f.id > user.id) {
+          friendships.push([user.id, f.id]);
+        }
+      }
+    }
+  }
+
+  function renderUserList() {
+    const list = document.getElementById('userList');
+    list.innerHTML = users.map(u => `
+      <div class="user-item" onclick="highlightUser(${u.id})">
+        <div>
+          <div class="name">${u.name}</div>
+          <div class="info">ID: ${u.id} · Age: ${u.age}</div>
+        </div>
+        <span class="tag">User</span>
+      </div>
+    `).join('');
+  }
+
+  // ─── Graph Drawing ───
+  function drawGraph() {
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const radius = Math.min(cx, cy) - 80;
+
+    // Calculate positions in a circle
+    const positions = {};
+    users.forEach((user, i) => {
+      const angle = (2 * Math.PI * i) / users.length - Math.PI / 2;
+      positions[user.id] = {
+        x: cx + radius * Math.cos(angle),
+        y: cy + radius * Math.sin(angle)
+      };
+    });
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw edges
+    ctx.strokeStyle = '#00d4ff33';
+    ctx.lineWidth = 1.5;
+    for (let [id1, id2] of friendships) {
+      if (positions[id1] && positions[id2]) {
+        ctx.beginPath();
+        ctx.moveTo(positions[id1].x, positions[id1].y);
+        ctx.lineTo(positions[id2].x, positions[id2].y);
+        ctx.stroke();
+      }
+    }
+
+    // Draw nodes
+    users.forEach(user => {
+      const pos = positions[user.id];
+      if (!pos) return;
+
+      // Glow effect
+      const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 30);
+      grd.addColorStop(0, '#00d4ff44');
+      grd.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 30, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      // Node circle
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
+      ctx.fillStyle = '#1a1a35';
+      ctx.fill();
+      ctx.strokeStyle = '#00d4ff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Name label
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText(user.name.substring(0, 3), pos.x, pos.y + 4);
+
+      // ID below
+      ctx.fillStyle = '#555';
+      ctx.font = '10px Segoe UI';
+      ctx.fillText(`#${user.id}`, pos.x, pos.y + 38);
+    });
+  }
+
+  function highlightUser(userId) {
+    document.getElementById('suggestId').value = userId;
+    document.getElementById('fromId').value = userId;
+  }
+
+  // ─── API Functions ───
+  async function addUser() {
+    const name = document.getElementById('newName').value;
+    const age = document.getElementById('newAge').value;
+    if (!name || !age) { alert('Enter name and age!'); return; }
+    await fetch(`${API}/users?name=${name}&age=${age}`, { method: 'POST' });
+    document.getElementById('newName').value = '';
+    document.getElementById('newAge').value = '';
+    await init();
+  }
+
+  async function findPath() {
+    const from = document.getElementById('fromId').value;
+    const to = document.getElementById('toId').value;
+    if (!from || !to) { alert('Enter both user IDs!'); return; }
+    const res = await fetch(`${API}/path?from=${from}&to=${to}`);
+    const data = await res.json();
+    const box = document.getElementById('pathResult');
+    if (data.message) {
+      box.innerHTML = `<span style="color:#ff6b6b">${data.message}</span>`;
+    } else {
+      const pathHtml = data.path.map(n =>
+        `<span class="path-item">${n}</span>`).join(' → ');
+      box.innerHTML = `
+        ${pathHtml}
+        <br><br>
+        <span class="highlight">Degrees of separation: ${data.degrees}</span>
+      `;
+    }
+  }
+
+  async function getSuggestions() {
+    const id = document.getElementById('suggestId').value;
+    if (!id) { alert('Enter user ID!'); return; }
+    const res = await fetch(`${API}/suggestions/${id}`);
+    const data = await res.json();
+    const box = document.getElementById('suggestResult');
+    if (data.length === 0) {
+      box.innerHTML = 'No suggestions available.';
+    } else {
+      box.innerHTML = data.map(u =>
+        `<span class="path-item">${u.name}</span>`).join(' ');
+    }
+  }
+
+  async function searchUsers() {
+    const name = document.getElementById('searchName').value;
+    if (!name) return;
+    const res = await fetch(`${API}/search?name=${name}`);
+    const data = await res.json();
+    const box = document.getElementById('searchResult');
+    if (data.length === 0) {
+      box.innerHTML = 'No users found.';
+    } else {
+      box.innerHTML = data.map(u =>
+        `<span class="path-item">${u.name} (#${u.id})</span>`).join(' ');
+    }
+  }
+
+  async function getCommunities() {
+    const res = await fetch(`${API}/communities`);
+    const data = await res.json();
+    const box = document.getElementById('communityResult');
+    box.innerHTML = data.map((group, i) => `
+      <div class="community-group">
+        <div class="c-title">Community ${i + 1}</div>
+        ${group.map(name => `<span class="community-member">${name}</span>`).join('')}
+      </div>
+    `).join('');
+  }
+
+  // Resize canvas on window resize
+  window.addEventListener('resize', drawGraph);
+
+  // Start!
+  init();
+</script>
+</body>
+</html>
